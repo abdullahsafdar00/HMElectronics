@@ -26,6 +26,22 @@ export const AppContextProvider = (props) => {
     const [isSeller, setIsSeller] = useState(false)
     const [cartItems, setCartItems] = useState({})
 
+      const clearCartState = async () => {
+        try {
+            setCartItems({}); // Zero it out in frontend state instantly
+            
+            if (user) {
+                const token = await getToken();
+                // Send an empty object to your existing endpoint to clear it out on the database side
+                await axios.post('/api/cart/update', { cartData: {} }, { headers: { Authorization: `Bearer ${token}` } });
+                toast.success("Order processed! Cart cleared.");
+            }
+        } catch (error) {
+            console.error("Error clearing transaction cart:", error);
+            toast.error("Could not sync empty basket state.");
+        }
+    }
+
     const fetchProductData = async () => {
         try {
 
@@ -150,7 +166,8 @@ export const AppContextProvider = (props) => {
         products, fetchProductData,
         cartItems, setCartItems,
         addToCart, updateCartQuantity,
-        getCartCount, getCartAmount
+        getCartCount, getCartAmount,
+        clearCartState
     }
 
     return (
