@@ -3,11 +3,13 @@
 import { useAppContext } from "@/context/AppContext";
 import axios from "axios";
 import React, { useEffect, useState } from "react";
+import JazzCashPaymentButton from "@/components/JazzCashPaymentButton";
 import toast from "react-hot-toast";
 import { motion } from "framer-motion";
 import { SignInButton } from '@clerk/nextjs';
 
 const COURIERS = [
+    { name: "TCS Express Courier", value: "tcs" }, // Matches your real courierServices backend key
   { name: "M&P", value: "mnp" },
   { name: "Trax", value: "trax" },
   { name: "Leopard", value: "leopard" },
@@ -22,7 +24,8 @@ const OrderSummary = () => {
   const [status, setStatus] = useState("")
   const [selectedCourier, setSelectedCourier] = useState(null);
   const [autoSuggestedCourier, setAutoSuggestedCourier] = useState(null);
-
+  // Add this next to your other useState hooks
+const [paymentMethod, setPaymentMethod] = useState("cod"); // Toggle state options: 'cod' or 'jazzcash'
   const [userAddresses, setUserAddresses] = useState([]);
 
   const fetchUserAddresses = async () => {
@@ -49,15 +52,16 @@ const OrderSummary = () => {
     setIsDropdownOpen(false);
   };
 
-  // Auto-suggest best courier based on city (extra value)
-  useEffect(() => {
-    if (selectedAddress) {
-      const city = selectedAddress.city?.toLowerCase() || "";
-      if (city.includes("karachi")) setAutoSuggestedCourier("mnp");
-      else if (city.includes("lahore")) setAutoSuggestedCourier("leopard");
-      else setAutoSuggestedCourier("trax");
-    }
-  }, [selectedAddress]);
+  // Auto-suggest best courier based on city location criteria
+useEffect(() => {
+  if (selectedAddress) {
+    const city = selectedAddress.city?.toLowerCase() || "";
+    if (city.includes("karachi")) setAutoSuggestedCourier("mnp");
+    else if (city.includes("lahore")) setAutoSuggestedCourier("leopard");
+    else setAutoSuggestedCourier("tcs"); // Automatically recommends real TCS config for other regions
+  }
+}, [selectedAddress]);
+
 
   const createOrder = async () => {
     setStatus("loading")
@@ -181,7 +185,40 @@ const OrderSummary = () => {
           </div>
         </div>
 
-       
+       {/* PLACE THIS DIRECTLY UNDERNEATH COURIER SELECTION CONTAINER DIV */}
+<div>
+  <label className="text-base font-medium uppercase text-gray-600 block mb-2">
+    Payment Method
+  </label>
+  <div className="grid grid-cols-2 gap-3 text-sm">
+    <button
+      type="button"
+      onClick={() => setPaymentMethod("cod")}
+      className={`p-3 border rounded-md font-medium transition-all flex flex-col items-center justify-center gap-1 bg-white ${
+        paymentMethod === "cod" 
+          ? "border-orange-600 text-orange-600 ring-1 ring-orange-600" 
+          : "border-gray-200 text-gray-500 hover:bg-gray-50"
+      }`}
+    >
+      <span className="text-base">💵 COD</span>
+      <span className="text-[10px] font-normal text-gray-400">Cash on Delivery</span>
+    </button>
+
+    <button
+      type="button"
+      onClick={() => setPaymentMethod("jazzcash")}
+      className={`p-3 border rounded-md font-medium transition-all flex flex-col items-center justify-center gap-1 bg-white ${
+        paymentMethod === "jazzcash" 
+          ? "border-red-600 text-red-600 ring-1 ring-red-600" 
+          : "border-gray-200 text-gray-500 hover:bg-gray-50"
+      }`}
+    >
+      <span className="text-base font-bold text-red-600">🔴 JazzCash</span>
+      <span className="text-[10px] font-normal text-gray-400">Secure Online Pay</span>
+    </button>
+  </div>
+</div>
+
 
         <hr className="border-gray-500/30 my-5" />
 
@@ -202,17 +239,33 @@ const OrderSummary = () => {
         </div>
       </div>
 
-          <button
-          type="submit"
-          onClick={createOrder}
-          className="w-full bg-orange-600 h-12 text-white py-3 mt-5 hover:bg-orange-700"
-        >
-          {status === "loading" ?  <span className="flex items-center justify-center space-x-1">
-    <span className="w-1.5 h-1.5 text-center bg-white rounded-full animate-bounce [animation-delay:-0.3s]" />
-    <span className="w-1.5 h-1.5 text-center bg-white rounded-full animate-bounce [animation-delay:-0.15s]" />
-    <span className="w-1.5 h-1.5 text-center bg-white rounded-full animate-bounce" />
-  </span> : "Place Order"}
-        </button>
+          {/* REPLACE YOUR ORIGINAL PLACE ORDER SUBMIT BUTTON WITH THIS BLOCK */}
+<div className="mt-5">
+  {paymentMethod === "jazzcash" ? (
+    <JazzCashPaymentButton 
+      address={selectedAddress ? `${selectedAddress.fullName}, ${selectedAddress.area}, ${selectedAddress.city}, ${selectedAddress.state}` : ""} 
+      courierName={selectedCourier || autoSuggestedCourier || ""}
+    />
+  ) : (
+    <button
+      type="button"
+      onClick={createOrder}
+      disabled={status === "loading"}
+      className="w-full bg-orange-600 h-12 text-white py-3 hover:bg-orange-700 transition-colors font-medium text-center flex items-center justify-center"
+    >
+      {status === "loading" ? (
+        <span className="flex items-center justify-center space-x-1">
+          <span className="w-1.5 h-1.5 bg-white rounded-full animate-bounce [animation-delay:-0.3s]" />
+          <span className="w-1.5 h-1.5 bg-white rounded-full animate-bounce [animation-delay:-0.15s]" />
+          <span className="w-1.5 h-1.5 bg-white rounded-full animate-bounce" />
+        </span>
+      ) : (
+        "Place COD Order"
+      )}
+    </button>
+  )}
+</div>
+
       </>
        )}
       </>
