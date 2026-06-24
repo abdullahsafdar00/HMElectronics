@@ -19,7 +19,7 @@ export default function RootLayout({ children }) {
   frontendApi={process.env.NEXT_PUBLIC_CLERK_FRONTEND_API}
 >
   <html lang="en">
-    <body className={`${outfit.className} antialiased text-gray-700`}>
+    <body className={`${outfit.className} antialiased text-gray-700`} suppressHydrationWarning>
       
       <Toaster />
       <AppContextProvider>
